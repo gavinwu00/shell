@@ -31,6 +31,21 @@ void convertToArray (char **arguments, char *input, int *size) {
   // store the size of the array here and pass it back by reference
   *size = numOfWords;
 }
+//============================================================================================================
+// debugging function purposes
+void printArray (char **arguments, char*input, int which1, int size) {
+
+  if (which1 == 1) {
+    int i;
+    for (i=0; i <size; i++ ) {
+      printf("%s\n", arguments[i] );
+    }
+  }
+
+  else if (which1 == 2) {
+    printf("%s\n",input );
+  }
+}
 
 //====================================================================================
 // handle sig int
@@ -58,25 +73,27 @@ int main() {
   int numOfWords = 0; // useed in arguments where how many arguments we have in total
 
   // grab user input
+  printf("361 >");
   fgets(userInput, 100, stdin);
-  //printf("Enter a command\n");
-  //printf("Your input was %s\n", userInput);
+  printf("Your input was %s\n", userInput);
 
   convertToArray(arguments, userInput, &numOfWords);
 
   // now arguments hold each individual words at each index.
-  printf("size of array is %d\n", numOfWords);
+  // numOfWords now holds the size of the words in arguments
 
 
-  while (1) {
-
-    if (strcmp("exit\n", userInput) == 0) {
-      write(1, "Exiting the program...",7 );
-      exit(0);
-    }
 
 
-  } // infinite while
+  // while (1) {
+  //
+  //   if (strcmp("exit\n", userInput) == 0) {
+  //     write(1, "Exiting the program...",7 );
+  //     exit(0);
+  //   }
+  //
+  //
+  // } // infinite while
 
    return 0;
 }
