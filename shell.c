@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include<sys/wait.h>
 
 void convertToArray (char **arguments, char *input, int *size) {
   // need to prase my initialinput which is just a char array into individual words
@@ -75,12 +76,33 @@ int main() {
   // grab user input
   printf("361 >");
   fgets(userInput, 100, stdin);
-  printf("Your input was %s\n", userInput);
+  //printf("Your input was %s\n", userInput);
 
   convertToArray(arguments, userInput, &numOfWords);
 
   // now arguments hold each individual words at each index.
   // numOfWords now holds the size of the words in arguments
+
+  pid_t pid;
+  int child_status; // status for WEEXITSTATUS
+  pid = fork();
+
+  // child process should do the main work
+  if (pid == 0) {
+    //printf("child was called!\n" );
+    execvp (arguments[0], arguments);
+    exit(0);
+  }
+
+  // parent part here. need to print out pid and status
+  else {
+    wait (&child_status);
+    printf("pid:%d status:%d\n", pid, WEXITSTATUS(child_status) );
+  }
+
+
+
+
 
 
 
