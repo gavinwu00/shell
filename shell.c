@@ -60,6 +60,61 @@ void sigstp_handler(int sig ){
 
 }
 
+//============================================================================================
+
+// this function will check for a symbol in the input
+// >
+// <
+// ;
+// |
+char checkSymbol (char **arguments, int size){
+
+  int i;
+  for (i=0; i <size; i++) {
+    if (strcmp(arguments[i], ">") == 0)
+      return '>';
+    else if (strcmp(arguments[i], "<") == 0)
+      return '<';
+    else if (strcmp(arguments[i], ";") == 0)
+      return ';';
+    else if (strcmp(arguments[i], "|") == 0)
+      return '|';
+  }
+
+  // nothing special found so we know it's just a regular command
+  return '$';
+
+}
+
+//===================================================================================================
+
+// do the main work of the shell, i/o stuff
+void runCommand(char **arguments, int size ) {
+
+  char symbolChecker = checkSymbol(arguments, size);
+  //printf("the symbol we got here was %c\n", symbolChecker);
+
+  // $ means just a regular normal command, other cases should be easy to figure out from looking
+  switch (symbolChecker) {
+    case '$' :
+      execvp(arguments[0], arguments);
+      break;
+    case '>' :
+      printf("> was called \n");
+      break;
+    case '<' :
+      printf("< was called\n");
+      break;
+    case ';' :
+      printf("; was called \n");
+      break;
+    case '|' :
+      printf("| was called \n");
+      break;
+
+  }
+
+}
 //=======================================================================================
 int main() {
   //signal (SIGINT, sigint_handler); // ctrl c
@@ -82,6 +137,7 @@ int main() {
 
   // now arguments hold each individual words at each index.
   // numOfWords now holds the size of the words in arguments
+  //printArray(arguments,userInput,1,numOfWords);
 
   pid_t pid;
   int child_status; // status for WEEXITSTATUS
@@ -90,22 +146,20 @@ int main() {
   // child process should do the main work
   if (pid == 0) {
     //printf("child was called!\n" );
-    execvp (arguments[0], arguments);
+    runCommand(arguments, numOfWords);
     exit(0);
   }
 
   // parent part here. need to print out pid and status
   else {
     wait (&child_status);
-    printf("pid:%d status:%d\n", pid, WEXITSTATUS(child_status) );
+
+    // if the child terminated normally
+    if (WIFEXITED(child_status)) {
+      printf("pid:%d status:%d\n", pid, WEXITSTATUS(child_status) );
+    }
+
   }
-
-
-
-
-
-
-
 
   // while (1) {
   //
