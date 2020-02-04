@@ -11,16 +11,18 @@ void convertToArray (char **arguments, char *input, int *size) {
 
   int numOfWords = 0;
 
-  char *parse = strtok(input, " "); // parse base on spaces
+  char *parse = strtok(input, " \n\t"); // parse base on spaces
   arguments[numOfWords] = parse; // put the first word into arguments
   numOfWords++;
   while (parse != NULL) {
-    parse = strtok(NULL, " "); // grab next token
+    parse = strtok(NULL, " \n\t"); // grab next token
     arguments[numOfWords] = parse;
     numOfWords++;
 
-    // need this because there will be an extra addition
+    // need this because there will be an extra addition since token accounts for null
     //avoid seg fault
+    // NOTE: whitespace problem might occur, if all else fails just do -- outside :)
+    // fixed.
     if (parse == NULL) {
       numOfWords--;
     }
@@ -57,29 +59,10 @@ int main() {
 
   // grab user input
   fgets(userInput, 100, stdin);
-  printf("Enter a command\n");
-  printf("Your input was %s\n", userInput);
+  //printf("Enter a command\n");
+  //printf("Your input was %s\n", userInput);
 
   convertToArray(arguments, userInput, &numOfWords);
-
-  // // need to prase my initialinput which is just a char array into individual words
-  // // place it into arguments []
-  // // going to use tokens
-  //
-  // char *parse = strtok(userInput, " "); // parse base on spaces
-  // arguments[numOfWords] = parse; // put the first word into arguments
-  // numOfWords++;
-  // while (parse != NULL) {
-  //   parse = strtok(NULL, " "); // grab next token
-  //   arguments[numOfWords] = parse;
-  //   numOfWords++;
-  //
-  //   // need this because there will be an extra addition
-  //   //avoid seg fault
-  //   if (parse == NULL) {
-  //     numOfWords--;
-  //   }
-  // }
 
   // now arguments hold each individual words at each index.
   printf("size of array is %d\n", numOfWords);
