@@ -67,7 +67,8 @@ void sigstp_handler(int sig ){
 // <
 // ;
 // |
-char checkSymbol (char **arguments, int size){
+// file name pass by reference as usual
+char checkSymbol (char **arguments, int size, char **file_name){
 
   int i;
   for (i=0; i <size; i++) {
@@ -82,6 +83,10 @@ char checkSymbol (char **arguments, int size){
   }
 
   // nothing special found so we know it's just a regular command
+
+  // how to pass by reference in c for strings and it works!
+  char*new = "not needed";
+  *file_name = new;
   return '$';
 
 }
@@ -91,13 +96,20 @@ char checkSymbol (char **arguments, int size){
 // do the main work of the shell, i/o stuff
 void runCommand(char **arguments, int size ) {
 
-  char symbolChecker = checkSymbol(arguments, size);
+  char *file_name;
+
+  // file name is now working
+  char symbolChecker = checkSymbol(arguments, size, &file_name);
   //printf("the symbol we got here was %c\n", symbolChecker);
 
   // $ means just a regular normal command, other cases should be easy to figure out from looking
   switch (symbolChecker) {
     case '$' :
-      execvp(arguments[0], arguments);
+    {
+      execvp(arguments[0], arguments); // anything below doesnt get printed out for some reason
+      //printf("hello\n");
+      //printf("mee\n" );
+    }
       break;
     case '>' :
       printf("> was called \n");
@@ -117,8 +129,9 @@ void runCommand(char **arguments, int size ) {
 }
 //=======================================================================================
 int main() {
-  //signal (SIGINT, sigint_handler); // ctrl c
 
+  // make a singal for ctrl z too
+  //signal (SIGINT, sigint_handler); // ctrl c
 
   char userInput[100]; // intial userinput
 
