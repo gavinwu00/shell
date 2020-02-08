@@ -4,6 +4,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include<sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 void convertToArray (char **arguments, char *input, int *size) {
   // need to prase my initialinput which is just a char array into individual words
@@ -70,23 +73,38 @@ void sigstp_handler(int sig ){
 // file name pass by reference as usual
 char checkSymbol (char **arguments, int size, char **file_name){
 
+  // we know the format on where the filename is going to be so
+  // the next index in arguments will have where the file name will be easy.
+
   int i;
   for (i=0; i <size; i++) {
-    if (strcmp(arguments[i], ">") == 0)
+
+    if (strcmp(arguments[i], ">") == 0) {
+      *file_name = arguments[i+1];
       return '>';
-    else if (strcmp(arguments[i], "<") == 0)
+    }
+
+    else if (strcmp(arguments[i], "<") == 0){
+      *file_name = arguments[i+1];
       return '<';
-    else if (strcmp(arguments[i], ";") == 0)
+    }
+
+    else if (strcmp(arguments[i], ";") == 0){
       return ';';
-    else if (strcmp(arguments[i], "|") == 0)
+    }
+
+    else if (strcmp(arguments[i], "|") == 0) {
       return '|';
-  }
+    }
+
+  } // for loop
 
   // nothing special found so we know it's just a regular command
 
   // how to pass by reference in c for strings and it works!
-  char*new = "not needed";
-  *file_name = new;
+  //char*new = "not needed";
+  //*file_name = new;
+  *file_name = "not needed";
   return '$';
 
 }
@@ -96,35 +114,41 @@ char checkSymbol (char **arguments, int size, char **file_name){
 // do the main work of the shell, i/o stuff
 void runCommand(char **arguments, int size ) {
 
-  char *file_name;
+  char *file_name; // grab the file name from checkSymbol function
 
-  // file name is now working
   char symbolChecker = checkSymbol(arguments, size, &file_name);
   //printf("the symbol we got here was %c\n", symbolChecker);
 
   // $ means just a regular normal command, other cases should be easy to figure out from looking
   switch (symbolChecker) {
     case '$' :
-    {
-      execvp(arguments[0], arguments); // anything below doesnt get printed out for some reason
+      //printf("%s\n",file_name );
+      execvp(arguments[0], arguments); // anything below doesnt get printed out for some reason..because it replaces a new program process
       //printf("hello\n");
       //printf("mee\n" );
-    }
+      break; // probably wont even reach here this break
+
+    // existing files are over written
+    case '>' : ;
+      int f = open(file_name, O_TRUNC | O_WRONLY | O_CREAT | S_IRWXU | S_IRWXG );
+      dup2(f, 1);
+      execvp(arguments[0], arguments);
       break;
-    case '>' :
-      printf("> was called \n");
-      break;
+
     case '<' :
+      printf("%s\n",file_name );
       printf("< was called\n");
       break;
+
     case ';' :
       printf("; was called \n");
       break;
+
     case '|' :
       printf("| was called \n");
       break;
 
-  }
+  } // switch case
 
 }
 //=======================================================================================
