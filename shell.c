@@ -71,20 +71,23 @@ void sigstp_handler(int sig ){
 // ;
 // |
 // file name pass by reference as usual
-char checkSymbol (char **arguments, int size, char **file_name){
+char checkSymbol (char **arguments, int size, char **file_name, int *index){
 
   // we know the format on where the filename is going to be so
   // the next index in arguments will have where the file name will be easy.
+  // index stores the position of where the symbol is so we can chop off for array
 
   int i;
   for (i=0; i <size; i++) {
 
     if (strcmp(arguments[i], ">") == 0) {
+      *index = i;
       *file_name = arguments[i+1];
       return '>';
     }
 
     else if (strcmp(arguments[i], "<") == 0){
+      *index = i;
       *file_name = arguments[i+1];
       return '<';
     }
@@ -115,8 +118,9 @@ char checkSymbol (char **arguments, int size, char **file_name){
 void runCommand(char **arguments, int size ) {
 
   char *file_name; // grab the file name from checkSymbol function
+  int index_pos;
 
-  char symbolChecker = checkSymbol(arguments, size, &file_name);
+  char symbolChecker = checkSymbol(arguments, size, &file_name, &index_pos);
   //printf("the symbol we got here was %c\n", symbolChecker);
 
   // $ means just a regular normal command, other cases should be easy to figure out from looking
@@ -128,11 +132,18 @@ void runCommand(char **arguments, int size ) {
       //printf("mee\n" );
       break; // probably wont even reach here this break
 
-    // existing files are over written
+    // existing files are over written.. echo hi > hi.txt
+    // need to modify the char array
     case '>' : ;
-      int f = open(file_name, O_TRUNC | O_WRONLY | O_CREAT | S_IRWXU | S_IRWXG );
+      int f = open(file_name, O_TRUNC | O_RDWR | O_CREAT,    S_IRWXU | S_IRWXG | S_IRWXO);
       dup2(f, 1);
-      execvp(arguments[0], arguments);
+      char *newArg[100]; // make a brand new array
+      int i = 0;
+      for (i=0; i < index_pos; i++){ // copy over content
+        newArg[i] = arguments[i];
+      }
+      newArg[index_pos] = NULL; // set the null position for exec call
+      execvp(newArg[0], newArg);
       break;
 
     case '<' :
