@@ -64,12 +64,14 @@ void printArray (char **arguments, char*input, int which1, int size) {
 //====================================================================================
 // handle sig int
 void sigint_handler(int sig ){
-  write(1, "ctrl+z caught!\n",13 );
+  char msg[] = "caught sigint\n361>";
+  write(1, msg,sizeof(msg) );
 }
 
 // handle sig stp
 void sigstp_handler(int sig ){
-
+  char msg[] = "caught sigstp\n361>";
+  write(1,msg,sizeof(msg));
 
 }
 
@@ -87,6 +89,15 @@ char checkSymbol (char **arguments, int size, char **file_name, int *index){
   // the next index in arguments will have where the file name will be easy.
   // index stores the position of where the symbol is so we can chop off for array
 
+  // search by semicolon first so we can use 2 commands+ at same time and look good.
+  int p;
+  for (p=0; p < size; p++){
+    if (strcmp(arguments[p], ";") == 0) {
+      *index = p;
+      return ';';
+    }
+  }
+
   int i;
   for (i=0; i <size; i++) {
 
@@ -102,6 +113,7 @@ char checkSymbol (char **arguments, int size, char **file_name, int *index){
       return '<';
     }
 
+    // probably not needed 
     else if (strcmp(arguments[i], ";") == 0){
       *index = i;
       return ';';
@@ -185,7 +197,8 @@ void runCommand(char **arguments, int size ) {
 // arguments holds the array of input, into each individual words
 // size is the size of arguments
 // index_pos is the position on where the semi colon is at.
-// psuedo recursive call --> will call back runCommand to do work 
+// psuedo recursive call --> will call back runCommand to do work
+// based off the specs we only run as in command1 so nothing special
 void semicolonCommand(char **arguments, int size, int index_pos ) {
 
   // create two different arrays for each command on each side
@@ -211,6 +224,7 @@ void semicolonCommand(char **arguments, int size, int index_pos ) {
     b_size++;
   }
   b[b_size] = NULL;
+  //printArray(b,"dd",1,b_size);
   //runCommand(b,b_size);
 
   // now make another forking for the commands
@@ -220,7 +234,9 @@ void semicolonCommand(char **arguments, int size, int index_pos ) {
 
   // child process
   if (pid == 0) {
+    //printf("run");
     runCommand(a,a_size); //  we want command A to go first
+    exit(0);
   }
 
   // parent i guess
@@ -233,59 +249,59 @@ void semicolonCommand(char **arguments, int size, int index_pos ) {
 //======================================================================================================
 int main() {
 
-  // make a singal for ctrl z too
-  //signal (SIGINT, sigint_handler); // ctrl c
+  // handle the signals
+  signal (SIGINT, sigint_handler); // ctrl c
+  signal (SIGTSTP, sigstp_handler);
 
-  char userInput[500]; // intial userinput
+  while (1) {
 
-  // array of arguments, [0] is the command the the following are extra that comes along
-  // for now set it to 100, change later base off initial input
-  char *arguments[500];
+    char userInput[500]; // intial userinput
 
-  int numOfWords = 0; // useed in arguments where how many arguments we have in total
+    // array of arguments, [0] is the command the the following are extra that comes along
+    // for now set it to 100, change later base off initial input
+    char *arguments[500];
 
-  // grab user input
-  printf("361 >");
-  fgets(userInput, 100, stdin);
-  //printf("Your input was %s\n", userInput);
+    int numOfWords = 0; // useed in arguments where how many arguments we have in total
 
-  convertToArray(arguments, userInput, &numOfWords);
+    // grab user input
+    printf("361 >");
+    fgets(userInput, 100, stdin);
+    //printf("Your input was %s\n", userInput);
 
-  // now arguments hold each individual words at each index.
-  // numOfWords now holds the size of the words in arguments
-  //printArray(arguments,userInput,1,numOfWords);
-
-  pid_t pid;
-  int child_status; // status for WEEXITSTATUS
-  pid = fork();
-
-  // child process should do the main work
-  if (pid == 0) {
-    //printf("child was called!\n" );
-    runCommand(arguments, numOfWords);
-    exit(0);
-  }
-
-  // parent part here. need to print out pid and status
-  else {
-    wait (&child_status);
-
-    // if the child terminated normally
-    if (WIFEXITED(child_status)) {
-      printf("pid:%d status:%d\n", pid, WEXITSTATUS(child_status) );
+    if (strcmp("exit\n", userInput) == 0) {
+      //write(1, "Exiting the program...",7 );
+      exit(0);
     }
 
-  }
+    convertToArray(arguments, userInput, &numOfWords);
 
-  // while (1) {
-  //
-  //   if (strcmp("exit\n", userInput) == 0) {
-  //     write(1, "Exiting the program...",7 );
-  //     exit(0);
-  //   }
-  //
-  //
-  // } // infinite while
+    // now arguments hold each individual words at each index.
+    // numOfWords now holds the size of the words in arguments
+    //printArray(arguments,userInput,1,numOfWords);
+
+    pid_t pid;
+    int child_status; // status for WEEXITSTATUS
+    pid = fork();
+
+    // child process should do the main work
+    if (pid == 0) {
+      //printf("child was called!\n" );
+      runCommand(arguments, numOfWords);
+      exit(0);
+    }
+
+    // parent part here. need to print out pid and status
+    else {
+      wait (&child_status);
+
+      // if the child terminated normally
+      if (WIFEXITED(child_status)) {
+        printf("pid:%d status:%d\n", pid, WEXITSTATUS(child_status) );
+      }
+
+    }
+
+  } // infinite while
 
    return 0;
 }
