@@ -146,9 +146,16 @@ void runCommand(char **arguments, int size ) {
       execvp(newArg[0], newArg);
       break;
 
-    case '<' :
-      printf("%s\n",file_name );
-      printf("< was called\n");
+    case '<' : ;
+      int ff = open (file_name, O_RDONLY);
+      dup2(ff,0);
+      char *newArg1[100];
+      int j=0;
+      for (j=0; j < index_pos; j++) {
+        newArg1[j] = arguments[j];
+      }
+      newArg1[index_pos] = NULL;
+      execvp(newArg1[0], newArg1);
       break;
 
     case ';' :
