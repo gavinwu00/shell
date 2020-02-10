@@ -15,9 +15,11 @@
 // if the autograder does it without spaces, i have to parse it differently
 // use a different delimminater
 
-// function decleration
+// function declerations needed because they are gonna call itself in a cycle with runCommand()
 void semicolonCommand(char **arguments, int size, int index_pos);
+void pipeCommand(char **arguments, int size, int index_pos);
 
+//==============================================================================================================================
 void convertToArray (char **arguments, char *input, int *size) {
   // need to prase my initialinput which is just a char array into individual words
   // place it into arguments []
@@ -113,13 +115,14 @@ char checkSymbol (char **arguments, int size, char **file_name, int *index){
       return '<';
     }
 
-    // probably not needed 
+    // probably not needed
     else if (strcmp(arguments[i], ";") == 0){
       *index = i;
       return ';';
     }
 
     else if (strcmp(arguments[i], "|") == 0) {
+      *index = i;
       return '|';
     }
 
@@ -138,6 +141,8 @@ char checkSymbol (char **arguments, int size, char **file_name, int *index){
 //===================================================================================================
 
 // do the main work of the shell, i/o stuff
+// it will check if there is a special symbol
+// depending on the symbol it will do what it does accordingly to shell
 void runCommand(char **arguments, int size ) {
 
   char *file_name; // grab the file name from checkSymbol function
@@ -186,7 +191,7 @@ void runCommand(char **arguments, int size ) {
       break;
 
     case '|' :
-      printf("| was called \n");
+      pipeCommand(arguments, size, index_pos);
       break;
 
   } // switch case
@@ -246,6 +251,77 @@ void semicolonCommand(char **arguments, int size, int index_pos ) {
   }
 
 }
+
+//======================================================================================================
+// pipe command
+// redirect output of command 1 to command 2
+// similar to semi colon command but now a pipe is needed to pipe thr 1 command to the other 1
+void pipeCommand(char **arguments, int size, int index_pos ){
+
+  // create two different arrays for each command on each side
+  char *a[100];
+  char *b[100];
+
+  int a_size = 0;
+  int b_size = 0;
+
+  // grab the first half of the |
+  int i;
+  for (i=0; i < index_pos; i++) {
+    a[i] = arguments[i];
+    a_size++;
+  }
+  a[index_pos] = NULL;
+  //runCommand(a,a_size);
+
+  // now grab the second half of the |
+  int k;
+  for (k= index_pos + 1; k < size; k++){
+    b[b_size] = arguments[k];
+    b_size++;
+  }
+  b[b_size] = NULL;
+
+  int proc_stats;
+
+  // create a pipe
+  int pipe1[2];
+  pipe(pipe1);
+
+  // now make another process
+  pid_t pid;
+  pid = fork();
+
+  // child process
+  if (pid == 0) {
+
+    close(1); // close standard output
+    dup(pipe1[1]); // output go thr pipe
+
+    // close file dessc, not sure if needed here
+    close(pipe1[0]);
+    close(pipe1[1]);
+
+    runCommand(a,a_size); //  we want command A to go first
+    exit(0);
+  }
+
+  // parent i guess
+  else{
+      wait(&proc_stats);
+      close(0); // close input
+      dup(pipe1[0]); // make input come from pipe
+
+      // close file desc from pipe
+      close(pipe1[0]);
+      close(pipe1[1]);
+      printf("pid:%d status:%d\n", pid, WEXITSTATUS(proc_stats) );
+
+      runCommand(b,b_size); // wait until the first command goes first, then run this 1
+  }
+
+}
+
 //======================================================================================================
 int main() {
 
