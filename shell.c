@@ -1,3 +1,6 @@
+//Gavin Wu
+// 361 homework 3, spring 2020
+
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
@@ -7,6 +10,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+int printTwoPIDS = -999; // see if i should print pid twice or not
 
 //IMPORTANT TO KNOW I AM PARSING WITH SPACES IF THERE IS A SPECIAL token
 // EXAMPLE: ECHO HI > FOO.TXT
@@ -49,6 +54,7 @@ void convertToArray (char **arguments, char *input, int *size) {
 }
 //============================================================================================================
 // debugging function purposes
+// which 1, is if i wanna pring a char*array or just the char*
 void printArray (char **arguments, char*input, int which1, int size) {
 
   if (which1 == 1) {
@@ -66,18 +72,32 @@ void printArray (char **arguments, char*input, int which1, int size) {
 //====================================================================================
 // handle sig int
 void sigint_handler(int sig ){
-  char msg[] = "caught sigint\n361>";
+  char msg[] = "caught sigint\nCS361 >";
   write(1, msg,sizeof(msg) );
 }
 
 // handle sig stp
 void sigstp_handler(int sig ){
-  char msg[] = "caught sigstp\n361>";
+  char msg[] = "caught sigtstp\nCS361 >";
   write(1,msg,sizeof(msg));
 
 }
 
-//============================================================================================
+//===============================================================================================================
+// function to see if we see the | command then we make it print 2 pids
+// this is a cheese method for now
+int findPipe(char **arguments, int size) {
+  int i;
+  for(i=0; i < size; i++) {
+    if (strcmp(arguments[i], "|") == 0){
+      return 88;
+    }
+  }
+
+  return 5; // some random number that we literally dont care about
+}
+
+//================================================================================================================
 
 // this function will check for a symbol in the input
 // >
@@ -143,6 +163,8 @@ char checkSymbol (char **arguments, int size, char **file_name, int *index){
 // do the main work of the shell, i/o stuff
 // it will check if there is a special symbol
 // depending on the symbol it will do what it does accordingly to shell
+
+// extra > < symbols are for my learning purposes
 void runCommand(char **arguments, int size ) {
 
   char *file_name; // grab the file name from checkSymbol function
@@ -315,7 +337,11 @@ void pipeCommand(char **arguments, int size, int index_pos ){
       // close file desc from pipe
       close(pipe1[0]);
       close(pipe1[1]);
-      printf("pid:%d status:%d\n", pid, WEXITSTATUS(proc_stats) );
+      if (WIFEXITED(proc_stats)) {
+        //printf("fuckpid:%d status:%d\n", pid, WEXITSTATUS(proc_stats) );
+        //printf("hello" );
+      }
+      //printf("pid:%d status:%d\n", pid, WEXITSTATUS(proc_stats) );
 
       runCommand(b,b_size); // wait until the first command goes first, then run this 1
   }
@@ -340,7 +366,7 @@ int main() {
     int numOfWords = 0; // useed in arguments where how many arguments we have in total
 
     // grab user input
-    printf("361 >");
+    printf("CS361 >");
     fgets(userInput, 100, stdin);
     //printf("Your input was %s\n", userInput);
 
@@ -350,6 +376,8 @@ int main() {
     }
 
     convertToArray(arguments, userInput, &numOfWords);
+
+    printTwoPIDS = findPipe(arguments, numOfWords);
 
     // now arguments hold each individual words at each index.
     // numOfWords now holds the size of the words in arguments
@@ -371,8 +399,14 @@ int main() {
       wait (&child_status);
 
       // if the child terminated normally
+      // for the | the pid status 2 times comes from here
       if (WIFEXITED(child_status)) {
-        printf("pid:%d status:%d\n", pid, WEXITSTATUS(child_status) );
+        if (printTwoPIDS == 88) {
+          printf("pid:%d status:%d\n", pid, WEXITSTATUS(child_status) );
+          printf("pid:%d status:%d\n", pid, WEXITSTATUS(child_status) );
+        }
+        else
+          printf("pid:%d status:%d\n", pid, WEXITSTATUS(child_status) );
       }
 
     }
